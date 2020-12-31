@@ -5,9 +5,13 @@ Die Runtime der Function ist Node.js, der package manager ist npm.
 Die Function ist in Typescript geschrieben.
 
 ## Development
+1. `nvm use` // setzt Node Version
+2. `npm install` // Installiert packages
+3. `npm start` // Startet app lokal
+
 - Auf dem Branch develop kann entwickelt werden, ohne dass die FunctionApp neu deployed wird. 
 - Zum lokalen Testen in Visual Studio Code im Menu: Run > Start Debugging
-- Um Node Versions Probleme zu vermeiden: <pre>nvm use</pre> im Ordner ausführen. Das im Ordner vorhandene .nvmrc file setzt dann die Node Version automatisch.
+- Um Node Versions Probleme zu vermeiden: `nvm use` im Ordner ausführen. Das im Ordner vorhandene .nvmrc file setzt dann die Node Version automatisch. Falls du einen anderen Node Version manager benutzt, stell bitte sicher, das die Node Version 12.12.0 ist. 
 ### Requirements
 - Node
 - Node Version Manager
