@@ -1,17 +1,39 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+import {createDefaultContract} from './main'
 
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
     context.log('HTTP trigger function processed a request.');
-    const name = (req.query.name || (req.body && req.body.name));
-    const responseMessage = name
-        ? "Hello, " + name + ". This HTTP triggered function executed successfully."
-        : "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.";
+    
+    // check if projectID and contractType are specified
+    if(req.query.projectID && req.query.contractType){
 
-    context.res = {
-        // status: 200, /* Defaults to 200 */
-        body: responseMessage
-    };
+        const projectID = req.query.projectID
+        const contractType = req.query.contractType
 
+        const {info, error} = await createDefaultContract(projectID, contractType)
+
+        if(error){
+            context.res = {
+                status: 400,
+                body: {
+                    message: "Something went wrong creating the default contract"
+                }
+            }
+        } else {
+            context.res = {
+                status: 200,
+                body: {
+                    message: "The contract was sucessfully created", 
+                }
+            }
+        }
+    } else {
+        context.res = {
+            status: 400, 
+            body: `One of the following parameters might be missing: projectID, contractType`
+        }
+    }
+    context.done()
 };
 
 export default httpTrigger;
