@@ -1,3 +1,6 @@
+import Axios from 'axios'
+import { DEFAULT_SP_WEBSITE } from "../constants";
+
 export default class GraphAPI{
 
     authToken : string;
@@ -37,8 +40,16 @@ export default class GraphAPI{
         await this.authenticate(adal, graphBaseURL, clientID, clientSecret, tenant)
     }
 
-    async getSPListItem(){
-
+    async getSPListItems(listID : string, siteID = DEFAULT_SP_WEBSITE){
+        const data = await Axios.get(
+            `${this.graphBaseURL}/${this.apiVersion}/sites/${siteID}/lists/${listID}/items?$top=1000&expand=fields`,
+            {
+                headers: {
+                    Authorization: `Bearer ${this.authToken}`,
+                },
+            }
+        )
+        return data.data.value
     }
 
     setAuthToken(token){
