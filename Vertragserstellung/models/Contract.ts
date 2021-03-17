@@ -1,5 +1,14 @@
-import SharePoint from './Sharepoint'
-export default class Contract {
+import SharePoint from './GraphAPI'
+import {} from '../constants'
+
+ // Globals
+const GBR_VERTRAG = "Gesellschaftervertrag"
+const BERATUNGS_VERTRAG = "Beratungsvertrag"
+const TREUH_PROVIS_VERTRAG = "Treuhand- und Provisionsvertrag"
+const CONTR_VERTRAG = "Controllervertrag"
+
+// Class
+ export default class Contract {
  
     type : string;
     text : string;
@@ -18,13 +27,44 @@ export default class Contract {
     }
 
     async fetchContractTemplateText() : Promise<string>{
-        return ""
-    }
-    
-    async generatePlaceholderValueMap() : Promise<Map<string, string>>{
-        return new Map()
+        switch(this.type){
+            this.sharePoint.getSPListItem()
+        }
     }
 
+    async generateGbRVertragPlaceholderMap(){
+
+    }
+
+    async generateControllerVertragPlaceholderMap(){
+
+    }
+
+    async generateTreuhUndProvisVertragPlaceholderMap(){
+
+    }
+
+    async generateBeratVertragPlaceholderMap(){
+
+    }
+
+    // fetches default values and the respective placeholders and save them to a sharepoint list 
+    async generateDefaultPlaceholderValueMap(){
+        switch(this.type){
+            case GBR_VERTRAG: 
+                return this.generateGbRVertragPlaceholderMap()
+            case BERATUNGS_VERTRAG:
+                return this.generateGbRVertragPlaceholderMap()
+            case CONTR_VERTRAG: 
+                return this.generateControllerVertragPlaceholderMap()
+            case TREUH_PROVIS_VERTRAG: 
+                return this.generateTreuhUndProvisVertragPlaceholderMap()
+            default: 
+                throw new Error("There is no matching function for the given contract type")
+        }
+    }
+
+    // creates a contract text out of a template with placeholders and the replacements
     async generateContractText(replacePlaceholders){
         
         let templateText : string; 
@@ -32,7 +72,7 @@ export default class Contract {
 
         try {
             
-            let promises : Promise<any>[] = [this.fetchContractTemplateText(), this.generatePlaceholderValueMap()]
+            let promises : Promise<any>[] = [this.fetchContractTemplateText(), this.generateDefaultPlaceholderValueMap()]
             const data = await Promise.all(promises)
             
             templateText = data[0]
@@ -56,4 +96,6 @@ export default class Contract {
     setText(text : string){
         this.text = text
     }
+
+   
 }
