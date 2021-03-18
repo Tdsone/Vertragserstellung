@@ -10,6 +10,7 @@ import {
 } from '../constants';
 import Project from './Project';
 import { PlaceholderMap } from './CustomTypes';
+import Member from './Member';
 
 // Class
 export default class Contract {
@@ -43,23 +44,26 @@ export default class Contract {
 
   async generateControllerVertragPlaceholderMap() {
     const project = new Project(this.projectID, this.API);
+    const members = await project.getMembers();
+
     const controller = await project.getController();
     const projektleiter = await project.getProjektleiter();
+    const projektmitglieder = await project.getProjektmitglieder();
 
     const placeholderMap: PlaceholderMap = new Map([
       ['ControllerVorname', controller.Vorname],
       ['ControllerNachname', controller.Nachname],
-      ['ControllerStadt', ''],
-      ['ControllerPLZ', ''],
-      ['ControllerStrasse', ''],
-      ['ControllerHausnummer', ''],
-      ['ProjektleiterVorname', ''],
-      ['ProjektleiterNachname', ''],
-      ['GbRName', ''],
-      ['GbRStadt', ''],
-      ['GbRPLZ', ''],
-      ['GbRStrasse', ''],
-      ['GbRHausnummer', '']
+      ['ControllerStadt', controller.Stadt],
+      ['ControllerPLZ', controller.PLZ],
+      ['ControllerStrasse', controller.Strasse],
+      ['ControllerHausnummer', controller.Hausnummer],
+      ['ProjektleiterVorname', projektleiter.Vorname],
+      ['ProjektleiterNachname', projektleiter.Nachname],
+      ['GbRName', await project.getGbRName()],
+      ['GbRStadt', projektleiter.Stadt],
+      ['GbRPLZ', projektleiter.PLZ],
+      ['GbRStrasse', projektleiter.Strasse],
+      ['GbRHausnummer', projektleiter.Hausnummer]
     ]);
 
     return placeholderMap;
