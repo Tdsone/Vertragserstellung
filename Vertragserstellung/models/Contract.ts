@@ -1,101 +1,136 @@
-import SharePoint from './GraphAPI'
-import {} from '../constants'
+import GraphAPI from './GraphAPI';
 
- // Globals
-const GBR_VERTRAG = "Gesellschaftervertrag"
-const BERATUNGS_VERTRAG = "Beratungsvertrag"
-const TREUH_PROVIS_VERTRAG = "Treuhand- und Provisionsvertrag"
-const CONTR_VERTRAG = "Controllervertrag"
+import {
+  SP_VERTRAGSVORLAGEN_LIST_ID,
+  CONTRACT_TEMPLATE_ID_MAP,
+  GBR_VERTRAG,
+  BERATUNGS_VERTRAG,
+  CONTR_VERTRAG,
+  TREUH_PROVIS_VERTRAG
+} from '../constants';
+import Project from './Project';
+import { PlaceholderMap } from './CustomTypes';
 
 // Class
- export default class Contract {
- 
-    type : string;
-    text : string;
-    sharePoint : SharePoint;
-    templateText : string; 
+export default class Contract {
+  type: string;
+  text: string;
+  projectID: string;
+  API: GraphAPI;
+  templateText: string;
 
-    constructor(type){
-        this.type = type; 
-        this.text = "";
-        this.sharePoint = null;
+  constructor({ projectID, API, text = '', type = '', templateText = '' }) {
+    this.type = type;
+    this.text = text;
+    this.API = API;
+    this.projectID = projectID;
+    this.templateText = templateText;
+  }
+
+  async fetchContractTemplateText() {
+    let itemID = CONTRACT_TEMPLATE_ID_MAP.get(this.type);
+    const fields = await this.API.getSingleSPListItemFields(
+      SP_VERTRAGSVORLAGEN_LIST_ID,
+      itemID
+    );
+    this.setTemplateText(fields.Vertragstext);
+  }
+
+  async generateGbRVertragPlaceholderMap() {
+    // TODO
+    return new Map();
+  }
+
+  async generateControllerVertragPlaceholderMap() {
+    const project = new Project(this.projectID, this.API);
+    const controller = await project.getController();
+    const projektleiter = await project.getProjektleiter();
+
+    const placeholderMap: PlaceholderMap = new Map([
+      ['ControllerVorname', controller.Vorname],
+      ['ControllerNachname', controller.Nachname],
+      ['ControllerStadt', ''],
+      ['ControllerPLZ', ''],
+      ['ControllerStrasse', ''],
+      ['ControllerHausnummer', ''],
+      ['ProjektleiterVorname', ''],
+      ['ProjektleiterNachname', ''],
+      ['GbRName', ''],
+      ['GbRStadt', ''],
+      ['GbRPLZ', ''],
+      ['GbRStrasse', ''],
+      ['GbRHausnummer', '']
+    ]);
+
+    return placeholderMap;
+  }
+
+  // Treuhand und Provisionsvertrag enthält keine Placeholder
+  async generateTreuhUndProvisVertragPlaceholderMap() {
+    return new Map();
+  }
+
+  async generateBeratVertragPlaceholderMap() {
+    // TODO
+    const placeholderMap = new Map();
+    return placeholderMap;
+  }
+
+  // fetches default values and the respective placeholders and save them to a graphAPI list
+  async generateDefaultPlaceholderValueMap() {
+    switch (this.type) {
+      case GBR_VERTRAG:
+        return await this.generateGbRVertragPlaceholderMap();
+      case BERATUNGS_VERTRAG:
+        return await this.generateBeratVertragPlaceholderMap();
+      case CONTR_VERTRAG:
+        return await this.generateControllerVertragPlaceholderMap();
+      case TREUH_PROVIS_VERTRAG:
+        return await this.generateTreuhUndProvisVertragPlaceholderMap();
+      default:
+        throw new Error(
+          'There is no matching function for the given contract type'
+        );
+    }
+  }
+
+  // creates a contract text out of a template with placeholders and the replacements
+  async generateContractText(replacePlaceholders: Function) {
+    let templateText: string;
+    let placeholderValueMap: Map<string, string>;
+
+    try {
+      let promises: Promise<any>[] = [
+        this.fetchContractTemplateText(),
+        this.generateDefaultPlaceholderValueMap()
+      ];
+      const data = await Promise.all(promises);
+
+      templateText = data[0];
+      placeholderValueMap = data[1];
+
+      if (!templateText || !placeholderValueMap) {
+        throw new Error(
+          'An error occurred fetching default values or template'
+        );
+      }
+    } catch (error) {
+      console.error(error);
     }
 
-    async initialize(){
-        this.sharePoint = new SharePoint()
-        this.sharePoint.initialize() // TODO provide init details
-    }
+    const text = replacePlaceholders(templateText, placeholderValueMap);
+    this.setText(text);
+  }
 
-    async fetchContractTemplateText() : Promise<string>{
-        switch(this.type){
-            this.sharePoint.getSPListItem()
-        }
-    }
+  async saveToSharepoint() {}
 
-    async generateGbRVertragPlaceholderMap(){
+  // setter
 
-    }
+  setText(text: string) {
+    this.text = text;
+  }
 
-    async generateControllerVertragPlaceholderMap(){
-
-    }
-
-    async generateTreuhUndProvisVertragPlaceholderMap(){
-
-    }
-
-    async generateBeratVertragPlaceholderMap(){
-
-    }
-
-    // fetches default values and the respective placeholders and save them to a sharepoint list 
-    async generateDefaultPlaceholderValueMap(){
-        switch(this.type){
-            case GBR_VERTRAG: 
-                return this.generateGbRVertragPlaceholderMap()
-            case BERATUNGS_VERTRAG:
-                return this.generateGbRVertragPlaceholderMap()
-            case CONTR_VERTRAG: 
-                return this.generateControllerVertragPlaceholderMap()
-            case TREUH_PROVIS_VERTRAG: 
-                return this.generateTreuhUndProvisVertragPlaceholderMap()
-            default: 
-                throw new Error("There is no matching function for the given contract type")
-        }
-    }
-
-    // creates a contract text out of a template with placeholders and the replacements
-    async generateContractText(replacePlaceholders){
-        
-        let templateText : string; 
-        let placeholderValueMap : Map<string, string>
-
-        try {
-            
-            let promises : Promise<any>[] = [this.fetchContractTemplateText(), this.generateDefaultPlaceholderValueMap()]
-            const data = await Promise.all(promises)
-            
-            templateText = data[0]
-            placeholderValueMap = data[1]
-
-            if(!templateText || !placeholderValueMap){
-                throw new Error("An error occurred fetching default values or template")
-            }    
-        } catch(error){
-            console.error(error)
-        }
-
-        const text = replacePlaceholders(templateText, placeholderValueMap)
-        this.setText(text)
-    }
-
-    async saveToSharepoint(){
-   
-    }
-
-    setText(text : string){
-        this.text = text
-    }
-
-   
+  setTemplateText(text: string) {
+    this.templateText = text;
+  }
 }
