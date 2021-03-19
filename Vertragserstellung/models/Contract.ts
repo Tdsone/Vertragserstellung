@@ -48,7 +48,6 @@ export default class Contract {
 
     const controller = await project.getController();
     const projektleiter = await project.getProjektleiter();
-    const projektmitglieder = await project.getProjektmitglieder();
 
     const placeholderMap: PlaceholderMap = new Map([
       ['ControllerVorname', controller.Vorname],
