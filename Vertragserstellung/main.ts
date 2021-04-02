@@ -1,5 +1,6 @@
 // external modules/packages
 const adal = require('adal-node');
+import { Context } from '@azure/functions';
 // internal modules
 import Contract from './models/Contract';
 import GraphAPI from './models/GraphAPI';
@@ -16,7 +17,8 @@ export async function createDefaultContract(
   projectID: string,
   contractType: string,
   clientID: string,
-  clientSecret: string
+  clientSecret: string,
+  context: Context
 ) {
   const API = new GraphAPI();
 
@@ -28,27 +30,36 @@ export async function createDefaultContract(
       graphBaseURL: GRAPH_BASE_URL,
       tenant: TENANT,
       siteID: SP_ACD_SITE_ID,
-      apiVersion: API_VERSION
+      apiVersion: API_VERSION,
+      context
     });
 
     const contract = new Contract({
       projectID,
       type: contractType,
-      API
+      API,
+      context
     });
 
     await contract.generateContractText(replacePlaceHolders);
 
-    const linkToSPEntry = await contract.saveToSharepoint();
+    const { info, err } = await contract.saveToSharepoint();
+
+    if (err) {
+      return {
+        err,
+        info: null
+      };
+    }
 
     return {
-      error: null,
-      info: linkToSPEntry
+      err: null,
+      info: info
     };
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     return {
-      error,
+      err,
       info: null
     };
   }

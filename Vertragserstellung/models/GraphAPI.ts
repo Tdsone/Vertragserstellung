@@ -1,3 +1,4 @@
+import { Context } from '@azure/functions';
 import Axios from 'axios';
 
 export default class GraphAPI {
@@ -5,6 +6,7 @@ export default class GraphAPI {
   siteID: string;
   graphBaseURL: string;
   apiVersion: string;
+  context: Context;
 
   constructor() {
     this.authToken = '';
@@ -47,7 +49,8 @@ export default class GraphAPI {
     clientSecret,
     tenant,
     siteID,
-    apiVersion
+    apiVersion,
+    context
   }) {
     if (graphBaseURL == '') {
       return new Error('Could not initialize; graphBaseURL is missing');
@@ -56,6 +59,7 @@ export default class GraphAPI {
     await this.authenticate(adal, graphBaseURL, clientID, clientSecret, tenant);
     this.setSiteID(siteID);
     this.setApiVersion(apiVersion);
+    this.setContext(context);
   }
 
   async getMultipleSPListItems(listID: string) {
@@ -79,7 +83,32 @@ export default class GraphAPI {
         }
       }
     );
-    return response.data.value.fields;
+    return response.data.fields;
+  }
+
+  async createNewListItem(data: object, listID: string) {
+    const URL = `${this.graphBaseURL}/${this.apiVersion}/sites/${this.siteID}/lists/${listID}/items`;
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${this.authToken}`
+      }
+    };
+
+    try {
+      const res = await Axios.post(URL, data, config);
+      return {
+        info: res.data,
+        err: null
+      };
+    } catch (err) {
+      console.error("Couldn't save item to list.");
+      console.error(err);
+      return {
+        info: null,
+        err
+      };
+    }
   }
 
   // setter
@@ -98,5 +127,9 @@ export default class GraphAPI {
 
   setApiVersion(apiVersion: string) {
     this.apiVersion = apiVersion;
+  }
+
+  setContext(context: Context) {
+    this.context = context;
   }
 }

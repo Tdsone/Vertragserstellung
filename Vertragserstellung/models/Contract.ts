@@ -1,3 +1,4 @@
+import { Context } from '@azure/functions';
 import GraphAPI from './GraphAPI';
 
 import {
@@ -19,16 +20,28 @@ export default class Contract {
   projectID: string;
   API: GraphAPI;
   templateText: string;
+  context: Context;
+  placeholderMap: PlaceholderMap;
 
-  constructor({ projectID, API, text = '', type = '', templateText = '' }) {
+  constructor({
+    projectID,
+    API,
+    text = '',
+    type = '',
+    templateText = '',
+    context = null
+  }) {
     this.type = type;
     this.text = text;
     this.API = API;
     this.projectID = projectID;
     this.templateText = templateText;
+    this.context = context;
+    this.placeholderMap = null;
   }
 
   async fetchContractTemplateText() {
+    this.context.log('Fetching contract...');
     let itemID = CONTRACT_TEMPLATE_ID_MAP.get(this.type);
     const fields = await this.API.getSingleSPListItemFields(
       SP_VERTRAGSVORLAGEN_LIST_ID,
@@ -37,59 +50,64 @@ export default class Contract {
     this.setTemplateText(fields.Vertragstext);
   }
 
-  async generateGbRVertragPlaceholderMap() {
+  async generateGbRVertragPlaceholderMap(): Promise<PlaceholderMap> {
     // TODO
     return new Map();
   }
 
-  async generateControllerVertragPlaceholderMap() {
-    const project = new Project(this.projectID, this.API);
+  async generateControllerVertragPlaceholderMap(): Promise<PlaceholderMap> {
+    const project = new Project(this.projectID, this.API, this.context);
     const members = await project.getMembers();
 
     const controller = await project.getController();
     const projektleiter = await project.getProjektleiter();
 
     const placeholderMap: PlaceholderMap = new Map([
-      ['ControllerVorname', controller.Vorname],
-      ['ControllerNachname', controller.Nachname],
-      ['ControllerStadt', controller.Stadt],
-      ['ControllerPLZ', controller.PLZ],
-      ['ControllerStrasse', controller.Strasse],
-      ['ControllerHausnummer', controller.Hausnummer],
-      ['ProjektleiterVorname', projektleiter.Vorname],
-      ['ProjektleiterNachname', projektleiter.Nachname],
-      ['GbRName', await project.getGbRName()],
-      ['GbRStadt', projektleiter.Stadt],
-      ['GbRPLZ', projektleiter.PLZ],
-      ['GbRStrasse', projektleiter.Strasse],
-      ['GbRHausnummer', projektleiter.Hausnummer]
+      ['CONTROLLER_VORNAME', controller.Vorname],
+      ['CONTROLLER_NACHNAME', controller.Nachname],
+      ['CONTROLLER_STADT', controller.Stadt],
+      ['CONTROLLER_PLZ', controller.PLZ],
+      ['CONTROLLER_STRASSE', controller.Strasse],
+      ['CONTROLLER_HAUSNUMMER', controller.Hausnummer],
+      ['PROJEKTLEITER_VORNAME', projektleiter.Vorname],
+      ['PROJEKTLEITER_NACHNAME', projektleiter.Nachname],
+      ['GBR_NAME', await project.getGbRName()],
+      ['GBR_STADT', projektleiter.Stadt],
+      ['GBR_PLZ', projektleiter.PLZ],
+      ['GBR_STRASSE', projektleiter.Strasse],
+      ['GBR_HAUSNUMMER', projektleiter.Hausnummer]
     ]);
 
     return placeholderMap;
   }
 
   // Treuhand und Provisionsvertrag enthält keine Placeholder
-  async generateTreuhUndProvisVertragPlaceholderMap() {
+  async generateTreuhUndProvisVertragPlaceholderMap(): Promise<PlaceholderMap> {
     return new Map();
   }
 
-  async generateBeratVertragPlaceholderMap() {
+  async generateBeratVertragPlaceholderMap(): Promise<PlaceholderMap> {
     // TODO
-    const placeholderMap = new Map();
+    const placeholderMap = new Map([['Hi', 'hi']]);
     return placeholderMap;
   }
 
   // fetches default values and the respective placeholders and save them to a graphAPI list
-  async generateDefaultPlaceholderValueMap() {
+  async generateDefaultPlaceholderValueMap(): Promise<void> {
     switch (this.type) {
       case GBR_VERTRAG:
-        return await this.generateGbRVertragPlaceholderMap();
+        this.placeholderMap = await this.generateGbRVertragPlaceholderMap();
+        break;
       case BERATUNGS_VERTRAG:
-        return await this.generateBeratVertragPlaceholderMap();
+        this.context.log('Creating placeholder map for type Beratungsvertrag');
+        this.placeholderMap = await this.generateBeratVertragPlaceholderMap();
+        break;
       case CONTR_VERTRAG:
-        return await this.generateControllerVertragPlaceholderMap();
+        this.placeholderMap = await this.generateControllerVertragPlaceholderMap();
+        break;
       case TREUH_PROVIS_VERTRAG:
-        return await this.generateTreuhUndProvisVertragPlaceholderMap();
+        this.placeholderMap = await this.generateTreuhUndProvisVertragPlaceholderMap();
+        break;
       default:
         throw new Error(
           'There is no matching function for the given contract type'
@@ -99,33 +117,51 @@ export default class Contract {
 
   // creates a contract text out of a template with placeholders and the replacements
   async generateContractText(replacePlaceholders: Function) {
-    let templateText: string;
-    let placeholderValueMap: Map<string, string>;
-
     try {
       let promises: Promise<any>[] = [
         this.fetchContractTemplateText(),
         this.generateDefaultPlaceholderValueMap()
       ];
-      const data = await Promise.all(promises);
 
-      templateText = data[0];
-      placeholderValueMap = data[1];
+      await Promise.all(promises);
 
-      if (!templateText || !placeholderValueMap) {
+      if (!this.templateText || !this.placeholderMap) {
         throw new Error(
           'An error occurred fetching default values or template'
         );
       }
     } catch (error) {
-      console.error(error);
+      this.context.log(error);
     }
 
-    const text = replacePlaceholders(templateText, placeholderValueMap);
+    const text = replacePlaceholders(this.templateText, this.placeholderMap);
     this.setText(text);
   }
 
-  async saveToSharepoint() {}
+  async saveToSharepoint() {
+    // TODO replace with real values
+    const data = {
+      fields: {
+        Title: `${this.type}-${this.projectID}`, // projekt id plus vertragstyp
+        ProjektID: this.projectID,
+        VertragsvorlageID: 2,
+        Vertragstext: this.text,
+        LinkZumDokument: 'https://google.com'
+      }
+    };
+    const res = await this.API.createNewListItem(data, '3_ProjektVertraege');
+    if (!res.info) {
+      return {
+        info: null,
+        err: res.err
+      };
+    }
+
+    return {
+      info: res.info,
+      err: null
+    };
+  }
 
   // setter
 

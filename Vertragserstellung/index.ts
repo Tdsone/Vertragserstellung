@@ -7,6 +7,14 @@ const httpTrigger: AzureFunction = async function (
 ): Promise<void> {
   context.log('HTTP trigger function processed a request.');
 
+  if (req.method !== 'POST') {
+    context.res = {
+      status: 400,
+      body: 'The function only supports POST requests'
+    };
+    context.done();
+  }
+
   if (!req.query.projectID) {
     context.res = {
       status: 400,
@@ -45,14 +53,15 @@ const httpTrigger: AzureFunction = async function (
   const clientID = process.env['CLIENT_ID'];
   const clientSecret = process.env['CLIENT_SECRET'];
 
-  const { info, error } = await createDefaultContract(
+  const { info, err } = await createDefaultContract(
     projectID,
     contractType,
     clientID,
-    clientSecret
+    clientSecret,
+    context
   );
 
-  if (!error) {
+  if (!err) {
     context.res = {
       status: 200,
       body: {

@@ -5,16 +5,19 @@ import {
   SP_MITGLIEDER_LIST_ID
 } from '../constants';
 import Member, { sortByNachname } from './Member';
+import { Context } from '@azure/functions';
 
 export default class Project {
   ID: string;
   projectInfo: object;
   API: GraphAPI;
   members: Array<Member>;
+  context: Context;
 
-  constructor(ID, API) {
+  constructor(ID: string, API: GraphAPI, context: Context) {
     this.ID = ID;
     this.API = API;
+    this.context = context;
   }
 
   async getMembers(): Promise<Array<Member>> {
