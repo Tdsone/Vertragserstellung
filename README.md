@@ -1,4 +1,4 @@
-# Vertragserstllung Azure FunctionApp
+# Vertragserstellung Azure FunctionApp
 
 Diese Azure FunctionApp enthält eine HTTP-triggered Function, die aus Sharepoint Informationen automatisch Verträge für Bertungsteams erstellt.
 Die Runtime der Function ist Node.js, der package manager ist npm.
