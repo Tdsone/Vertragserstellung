@@ -32,3 +32,8 @@ To format the code correctly there are 2 options:
 
 Die FunctionApp wird mit einem push auf den master branch neu deployed.
 Die deployte Verision ist hier zu sehen: https://vertragserstellung.azurewebsites.net/api/Vertragserstellung?code=7Sz4f1TaMm1Bahhz1CK1zGnOCNTaVYG37FNQ0KrY0aId8JNkoWhU1A==
+
+## Lessons Learned
+
+- Use the [Graph Explorer](https://developer.microsoft.com/en-us/graph/graph-explorer) by Microsoft to test requests before implementing them.
+- Sometimes, Graph API requests work in the Graph Explorer but fail when using OData filters and Axios as the request library. In some cases, this is because the specified column that is filtered is not indexed. Fix: index the column in the respective SharePoint list. => [here is how](https://support.microsoft.com/en-us/office/add-an-index-to-a-list-or-library-column-f3f00554-b7dc-44d1-a2ed-d477eac463b0?ui=en-us&rs=en-us&ad=us)

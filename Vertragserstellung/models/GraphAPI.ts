@@ -62,27 +62,50 @@ export default class GraphAPI {
     this.setContext(context);
   }
 
-  async getMultipleSPListItems(listID: string) {
-    const response = await Axios.get(
-      `${this.graphBaseURL}/${this.apiVersion}/sites/${this.siteID}/lists/${listID}/items?$top=1000&expand=fields`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.authToken}`
-        }
+  async getMultipleSPListItems(listID: string, filter = '') {
+    this.context.log('executing getMultipleSPListItems()');
+    const filterQuery = filter ? `&filter=${filter}` : '';
+
+    const URL = `${this.graphBaseURL}/${this.apiVersion}/sites/${this.siteID}/lists/${listID}/items?$top=1000&expand=fields${filterQuery}`;
+    const config = {
+      headers: {
+        Authorization: `Bearer ${this.authToken}`
       }
-    );
-    return response.data.value.map((item) => item.fields);
+    };
+
+    try {
+      const response = await Axios.get(URL, config);
+
+      this.context.log('executed request');
+
+      if (response.statusText !== 'OK') {
+        this.context.log(response.config);
+        this.context.res = {
+          status: 500,
+          body: `An error occurred fetching ${URL}. Contract was not created.`
+        };
+        this.context.done(); // if a request fails the function gets terminated
+      }
+      return response.data.value.map((item) => item.fields);
+    } catch (err) {
+      this.context.log(err);
+      this.context.res = {
+        status: 500,
+        body: `An error occurred fetching ${URL}. Contract was not created.`
+      };
+      this.context.done(); // if a request fails the function gets terminated
+    }
   }
 
   async getSingleSPListItemFields(listID: string, itemID: string) {
-    const response = await Axios.get(
-      `${this.graphBaseURL}/${this.apiVersion}/sites/${this.siteID}/lists/${listID}/items/${itemID}?expand=fields`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.authToken}`
-        }
+    const URL = `${this.graphBaseURL}/${this.apiVersion}/sites/${this.siteID}/lists/${listID}/items/${itemID}?expand=fields`;
+    const config = {
+      headers: {
+        Authorization: `Bearer ${this.authToken}`
       }
-    );
+    };
+
+    const response = await Axios.get(URL, config);
     return response.data.fields;
   }
 

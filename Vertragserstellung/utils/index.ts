@@ -17,4 +17,44 @@ function replacePlaceHolders(
   return modifiedText;
 }
 
-export { replacePlaceHolders };
+// replace all special characters with HTML conform characters (e.g. § -> &sect;)
+function replaceSpecialCharacters(text: string): string {
+  let replacedText = text.replace('§', '&sect;');
+  return replacedText;
+}
+
+function capitalize(word: string) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+function parseFirstNameFromEmail(email: string) {
+  const firstName = email.slice(0, email.indexOf('.'));
+  return capitalize(firstName);
+}
+
+function parseLastNameFromEmail(email: string) {
+  const lastName = email.slice(email.indexOf('.') + 1, email.indexOf('@'));
+  return capitalize(lastName);
+}
+
+function createACMailAddress(firstName: string, lastName: string) {
+  return `${firstName.toLowerCase()}.${lastName.toLowerCase()}@acedemyconsult.de`;
+}
+
+function createGbRNameFromLastNames(lastnames: Array<String>) {
+  let gbrName = lastnames[0];
+  for (var i = 1; i < lastnames.length; i++) {
+    gbrName += '-' + lastnames[i];
+  }
+
+  return gbrName + ' GbR';
+}
+
+export {
+  replacePlaceHolders,
+  createACMailAddress,
+  replaceSpecialCharacters,
+  parseFirstNameFromEmail,
+  parseLastNameFromEmail,
+  createGbRNameFromLastNames
+};

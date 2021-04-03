@@ -1,16 +1,17 @@
 export default interface Member {
   ID: string;
   Projektrolle: string;
-  Vorname: string;
-  Nachname: string;
+  firstName: string;
+  lastName: string;
   Stadt: string;
-  PLZ: string;
+  Postleitzahl: string;
   Strasse: string;
   Hausnummer: string;
+  EmailAC: string;
 }
 
-export function sortByNachname(a: Member, b: Member): number {
-  if (a.Nachname < b.Nachname) {
+export function sortByLastname(a: Member, b: Member): number {
+  if (a.lastName < b.lastName) {
     return -1;
   }
   return 1;

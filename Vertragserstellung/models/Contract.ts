@@ -12,8 +12,8 @@ import {
 import Project from './Project';
 import { PlaceholderMap } from './CustomTypes';
 import Member from './Member';
+import { createACMailAddress, replaceSpecialCharacters } from '../utils';
 
-// Class
 export default class Contract {
   type: string;
   text: string;
@@ -47,7 +47,10 @@ export default class Contract {
       SP_VERTRAGSVORLAGEN_LIST_ID,
       itemID
     );
-    this.setTemplateText(fields.Vertragstext);
+
+    const text = replaceSpecialCharacters(fields.Vertragstext);
+
+    this.setTemplateText(text);
   }
 
   async generateGbRVertragPlaceholderMap(): Promise<PlaceholderMap> {
@@ -63,17 +66,17 @@ export default class Contract {
     const projektleiter = await project.getProjektleiter();
 
     const placeholderMap: PlaceholderMap = new Map([
-      ['CONTROLLER_VORNAME', controller.Vorname],
-      ['CONTROLLER_NACHNAME', controller.Nachname],
+      ['CONTROLLER_VORNAME', controller.firstName],
+      ['CONTROLLER_NACHNAME', controller.lastName],
       ['CONTROLLER_STADT', controller.Stadt],
-      ['CONTROLLER_PLZ', controller.PLZ],
+      ['CONTROLLER_PLZ', controller.Postleitzahl],
       ['CONTROLLER_STRASSE', controller.Strasse],
       ['CONTROLLER_HAUSNUMMER', controller.Hausnummer],
-      ['PROJEKTLEITER_VORNAME', projektleiter.Vorname],
-      ['PROJEKTLEITER_NACHNAME', projektleiter.Nachname],
+      ['PROJEKTLEITER_VORNAME', projektleiter.firstName],
+      ['PROJEKTLEITER_NACHNAME', projektleiter.lastName],
       ['GBR_NAME', await project.getGbRName()],
       ['GBR_STADT', projektleiter.Stadt],
-      ['GBR_PLZ', projektleiter.PLZ],
+      ['GBR_PLZ', projektleiter.Postleitzahl],
       ['GBR_STRASSE', projektleiter.Strasse],
       ['GBR_HAUSNUMMER', projektleiter.Hausnummer]
     ]);
@@ -87,8 +90,34 @@ export default class Contract {
   }
 
   async generateBeratVertragPlaceholderMap(): Promise<PlaceholderMap> {
-    // TODO
-    const placeholderMap = new Map([['Hi', 'hi']]);
+    const project = new Project(this.projectID, this.API, this.context);
+    await project.initialize();
+    const client = await project.getClient();
+    const projektleiter = await project.getProjektleiter();
+    const gbrName = await project.getGbRName();
+    const plStreetHnr = `${projektleiter.Strasse} ${projektleiter.Hausnummer}`;
+    const plFullName = `${projektleiter.firstName} ${projektleiter.lastName}`;
+    // const fullNameContactPerson = `${client.contactPerson.firstName} ${client.contactPerson.lastName}`;
+
+    const placeholderMap = new Map([
+      ['PROJEKT_TITEL', project.title],
+      ['KUNDE_UNTERNEHMEN', client.companyName],
+      ['KUNDE_STRASSE_HAUSNUMMER', client.street],
+      ['KUNDE_PLZ', client.PLZ],
+      ['KUNDE_STADT', client.city],
+      // ['KUNDE_VERTRETUNGSBERECHTIGTER', fullNameContactPerson],
+      ['GBR_NAME', gbrName],
+      ['PROJEKTLEITER_STRASSE_HAUSNUMMER', plStreetHnr],
+      ['PROJEKTLEITER_PLZ', projektleiter.Postleitzahl],
+      ['PROJEKTLEITER_STADT', projektleiter.Stadt],
+      ['PROJEKTLEITER_NAME', plFullName],
+      // // ['TAGESSATZ_PROJEKTLEITER', k],
+      // // ['TAGESSATZ_PROJEKTMITGLIED', k],
+      // // ['KUNDE_ANSPRECHPARTNER', k],
+      // // ['KUNDE_ANSPRECHPARTNER_EMAIL', k],
+      ['PROJEKTLEITER_EMAIL', projektleiter.EmailAC]
+    ]);
+
     return placeholderMap;
   }
 
@@ -131,10 +160,15 @@ export default class Contract {
         );
       }
     } catch (error) {
-      this.context.log(error);
+      //this.context.log(error);
     }
 
-    const text = replacePlaceholders(this.templateText, this.placeholderMap);
+    const text = replacePlaceholders(
+      this.templateText,
+      this.placeholderMap,
+      '##'
+    );
+
     this.setText(text);
   }
 
