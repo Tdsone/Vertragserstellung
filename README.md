@@ -26,8 +26,8 @@ Die Function ist in Typescript geschrieben.
 
 To format the code correctly there are 2 options:
 
-1. Run `npm run format` // this will format the code using the prettier npm module
-2. Use VS Code with the prettier extension installed (see https://khalilstemmler.com/blogs/tooling/prettier/ for instructions)
+- Run `npm run format` // this will format the code using the prettier npm module
+- Use VS Code with the prettier extension installed (see https://khalilstemmler.com/blogs/tooling/prettier/ for instructions)
 
 ### Requirements
 
