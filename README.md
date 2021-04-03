@@ -4,6 +4,14 @@ Diese Azure FunctionApp enthält eine HTTP-triggered Function, die aus Sharepoin
 Die Runtime der Function ist Node.js, der package manager ist npm.
 Die Function ist in Typescript geschrieben.
 
+## API Endpoints
+
+### POST /createContract to create a new contract with default values
+
+- method: POST
+- URL: https://vertragserstellung.azurewebsites.net/api/Vertragserstellung/createContract?code=7Sz4f1TaMm1Bahhz1CK1zGnOCNTaVYG37FNQ0KrY0aId8JNkoWhU1A==&projectID=YOUR-PROJECT-ID&contractType=YOUR-CONTRACT-TYPE
+- function: this will create a new entry in the Sharepoint List 3_ProjektVertraege with the HTML text of the contract based on the data of the specified project and the template of the contract type provided
+
 ## Development
 
 1. `nvm use` // setzt Node Version
