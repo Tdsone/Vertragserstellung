@@ -7,11 +7,19 @@
     "watch": "tsc -w",
     "prestart": "npm run build",
     "start": "func start",
-    "test": "echo \"No tests yet...\""
+    "test": "jest", 
+    "format": "prettier --config .prettierrc 'Vertragserstellung/**/*.ts' --write"
   },
-  "dependencies": {},
+  "dependencies": {
+    "adal-node": "^0.2.2",
+    "axios": "^0.21.1"
+  },
   "devDependencies": {
     "@azure/functions": "^1.0.2-beta2",
+    "@types/jest": "^26.0.20",
+    "jest": "^26.6.3",
+    "prettier": "^2.2.1",
+    "ts-jest": "^26.5.3",
     "typescript": "^3.3.3"
   }
 }
